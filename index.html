@@ -185,23 +185,31 @@
 
         /* Mobile optimizations */
         @media (max-width: 768px) {
+            .game-header {
+                margin-bottom: 10px;
+            }
+            
             .game-header h1 {
                 font-size: 2em;
+                margin-bottom: 10px;
             }
             
             .score-board {
                 flex-direction: column;
-                gap: 10px;
+                gap: 5px;
                 max-width: 250px;
+                padding: 8px;
             }
             
             .instructions {
                 font-size: 0.8em;
-                padding: 10px;
+                padding: 8px;
+                margin-bottom: 10px;
             }
             
             .mobile-controls {
                 display: flex !important;
+                margin: 10px 0;
             }
             
             .control-btn {
@@ -228,6 +236,14 @@
             
             .game-over p {
                 font-size: 1.2em;
+            }
+            
+            .game-controls {
+                margin-top: 10px;
+            }
+            
+            #gameCanvas {
+                margin: 10px auto;
             }
         }
 
@@ -260,23 +276,38 @@
 
         /* Landscape orientation on mobile */
         @media (orientation: landscape) and (max-height: 500px) {
+            body {
+                align-items: flex-start;
+                padding-top: 10px;
+            }
+            
+            .game-container {
+                padding: 5px;
+            }
+            
+            .game-header {
+                margin-bottom: 5px;
+            }
+            
             .game-header h1 {
-                font-size: 1.8em;
-                margin-bottom: 10px;
+                font-size: 1.5em;
+                margin-bottom: 5px;
             }
             
             .instructions {
-                padding: 8px;
-                margin-bottom: 10px;
+                padding: 5px;
+                margin-bottom: 5px;
+                font-size: 0.7em;
             }
             
             .score-board {
                 flex-direction: row;
-                padding: 8px;
+                padding: 5px;
+                gap: 10px;
             }
             
             .mobile-controls {
-                margin: 10px 0;
+                margin: 5px 0;
             }
             
             .control-btn {
@@ -289,6 +320,14 @@
                 width: 60px;
                 height: 60px;
                 font-size: 1.5em;
+            }
+            
+            #gameCanvas {
+                margin: 5px auto;
+            }
+            
+            .game-controls {
+                margin-top: 5px;
             }
         }
 
@@ -540,7 +579,9 @@
                 
                 if (this.isMobile) {
                     this.canvas.width = Math.min(400, window.innerWidth - 20);
-                    this.canvas.height = Math.min(600, window.innerHeight - 200);
+                    // Increase mobile height and use more available screen space
+                    const availableHeight = window.innerHeight - 180; // Leave space for UI
+                    this.canvas.height = Math.max(500, Math.min(700, availableHeight));
                 } else {
                     this.canvas.width = 800;
                     this.canvas.height = 600;
@@ -612,7 +653,9 @@
             }
             
             createPlayer() {
-                this.player = new Player(this.canvas.width / 2, this.canvas.height - 50, this.canvas);
+                // Position player relative to canvas height for better mobile experience
+                const playerY = this.canvas.height - 60; // Give more space from bottom
+                this.player = new Player(this.canvas.width / 2, playerY, this.canvas);
             }
             
             createAliens() {
@@ -621,9 +664,10 @@
                 const cols = 10;
                 const alienWidth = 40;
                 const alienHeight = 30;
-                const spacing = 50;
+                const spacing = this.isMobile ? 40 : 50; // Tighter spacing on mobile
                 const startX = (this.canvas.width - (cols * spacing)) / 2;
-                const startY = 50;
+                // Give more space at top for mobile
+                const startY = this.isMobile ? 30 : 50;
                 
                 for (let row = 0; row < rows; row++) {
                     for (let col = 0; col < cols; col++) {
