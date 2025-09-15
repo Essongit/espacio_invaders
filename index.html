@@ -644,19 +644,26 @@
                 
                 // Mobile touch controls
                 if (this.isMobile) {
-                    // Implement grid-aligned precise movement for mobile
+                    // Implement dual-mode movement for mobile (precise + accelerating hold)
                     document.getElementById('leftBtn').addEventListener('touchstart', (e) => {
                         e.preventDefault();
-                        // Instead of fixed pixels, align to columns based on alien spacing
+                        // Initial movement is precise (grid-aligned)
                         if (this.player && this.gameRunning && !this.gamePaused) {
                             // Calculate column width based on alien spacing
                             const columnWidth = this.isMobile ? 32 : 50; // Should match alien spacing
-                            // Move left by 1/4 of a column
+                            // Move left by 1/4 of a column for initial movement
                             const movement = columnWidth / 4;
                             this.player.x = Math.max(0, this.player.x - movement);
+                            
+                            // Enable continuous accelerating movement for hold
+                            this.keys['ArrowLeft'] = true;
+                            
+                            // Reset player speed to ensure we start slow
+                            if (this.player) {
+                                this.player.speed = this.player.baseSpeed;
+                                this.player.holdStartTime.left = Date.now();
+                            }
                         }
-                        // Disable continuous movement for more precise control
-                        // this.keys['ArrowLeft'] = true;
                     });
                     
                     document.getElementById('leftBtn').addEventListener('touchend', (e) => {
@@ -666,16 +673,23 @@
                     
                     document.getElementById('rightBtn').addEventListener('touchstart', (e) => {
                         e.preventDefault();
-                        // Instead of fixed pixels, align to columns based on alien spacing
+                        // Initial movement is precise (grid-aligned)
                         if (this.player && this.gameRunning && !this.gamePaused) {
                             // Calculate column width based on alien spacing
                             const columnWidth = this.isMobile ? 32 : 50; // Should match alien spacing
-                            // Move right by 1/4 of a column
+                            // Move right by 1/4 of a column for initial movement
                             const movement = columnWidth / 4;
                             this.player.x = Math.min(this.canvas.width - this.player.width, this.player.x + movement);
+                            
+                            // Enable continuous accelerating movement for hold
+                            this.keys['ArrowRight'] = true;
+                            
+                            // Reset player speed to ensure we start slow
+                            if (this.player) {
+                                this.player.speed = this.player.baseSpeed;
+                                this.player.holdStartTime.right = Date.now();
+                            }
                         }
-                        // Disable continuous movement for more precise control
-                        // this.keys['ArrowRight'] = true;
                     });
                     
                     document.getElementById('rightBtn').addEventListener('touchend', (e) => {
@@ -1093,16 +1107,55 @@
                 this.height = isMobile ? 15 : 30;
                 // Extremely slow movement speed on mobile for very precise control
                 this.speed = isMobile ? 1 : 5; // Further reduced from 2 to 1 on mobile
+                this.baseSpeed = isMobile ? 1 : 5; // Store the base speed value
+                this.maxSpeed = isMobile ? 4 : 8;  // Maximum speed when holding the button
+                this.accelerationRate = 0.05;      // How quickly speed increases when holding
+                this.holdStartTime = { left: 0, right: 0 }; // When button hold started
                 this.canvas = canvas;
                 this.isMobile = isMobile;
             }
             
             update(keys) {
+                const now = Date.now();
+                
+                // Calculate speed based on how long the key has been held
                 if (keys['ArrowLeft'] && this.x > 0) {
+                    if (this.holdStartTime.left === 0) {
+                        this.holdStartTime.left = now;
+                        this.speed = this.baseSpeed;
+                    } else {
+                        const holdDuration = now - this.holdStartTime.left;
+                        // Gradually increase speed up to maxSpeed over 500ms
+                        this.speed = Math.min(
+                            this.maxSpeed, 
+                            this.baseSpeed + (holdDuration / 500) * (this.maxSpeed - this.baseSpeed)
+                        );
+                    }
                     this.x -= this.speed;
+                } else {
+                    this.holdStartTime.left = 0;
                 }
+                
                 if (keys['ArrowRight'] && this.x < this.canvas.width - this.width) {
+                    if (this.holdStartTime.right === 0) {
+                        this.holdStartTime.right = now;
+                        this.speed = this.baseSpeed;
+                    } else {
+                        const holdDuration = now - this.holdStartTime.right;
+                        // Gradually increase speed up to maxSpeed over 500ms
+                        this.speed = Math.min(
+                            this.maxSpeed, 
+                            this.baseSpeed + (holdDuration / 500) * (this.maxSpeed - this.baseSpeed)
+                        );
+                    }
                     this.x += this.speed;
+                } else {
+                    this.holdStartTime.right = 0;
+                }
+                
+                // Reset speed if no keys are pressed
+                if (!keys['ArrowLeft'] && !keys['ArrowRight']) {
+                    this.speed = this.baseSpeed;
                 }
             }
             
