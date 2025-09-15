@@ -650,11 +650,11 @@
                         if (this.player && this.gameRunning && !this.gamePaused) {
                             // Calculate column width based on alien spacing
                             const columnWidth = this.isMobile ? 32 : 50; // Should match alien spacing
-                            // Move left by 1/2 of a column for faster movement
-                            const movement = columnWidth / 2;
+                            // Move left by 1/4 of a column for better alignment precision
+                            const movement = columnWidth / 4;
                             this.player.x = Math.max(0, this.player.x - movement);
                         }
-                        // Enable continuous movement for faster response
+                        // Enable continuous movement for response
                         this.keys['ArrowLeft'] = true;
                     });
                     
@@ -669,11 +669,11 @@
                         if (this.player && this.gameRunning && !this.gamePaused) {
                             // Calculate column width based on alien spacing
                             const columnWidth = this.isMobile ? 32 : 50; // Should match alien spacing
-                            // Move right by 1/2 of a column for faster movement
-                            const movement = columnWidth / 2;
+                            // Move right by 1/4 of a column for better alignment precision
+                            const movement = columnWidth / 4;
                             this.player.x = Math.min(this.canvas.width - this.player.width, this.player.x + movement);
                         }
-                        // Enable continuous movement for faster response
+                        // Enable continuous movement for response
                         this.keys['ArrowRight'] = true;
                     });
                     
@@ -689,8 +689,17 @@
                     document.getElementById('leftBtn').addEventListener('click', (e) => {
                         const now = Date.now();
                         if (now - lastLeftClickTime < 300 && this.player && this.gameRunning && !this.gamePaused) {
-                            // On double-click, move by just 1 pixel for ultra-precise alignment
-                            this.player.x = Math.max(0, this.player.x - 1);
+                            // On double-click, attempt column alignment - find nearest column to the left
+                            if (this.alienStartX !== undefined && this.alienSpacing !== undefined) {
+                                const colWidth = this.alienSpacing;
+                                const relativeX = this.player.x - this.alienStartX;
+                                const targetCol = Math.floor(relativeX / colWidth);
+                                const alignedX = this.alienStartX + (targetCol * colWidth);
+                                this.player.x = Math.max(0, alignedX);
+                            } else {
+                                // If no alien formation, just move 1px
+                                this.player.x = Math.max(0, this.player.x - 1);
+                            }
                         }
                         lastLeftClickTime = now;
                     });
@@ -698,8 +707,17 @@
                     document.getElementById('rightBtn').addEventListener('click', (e) => {
                         const now = Date.now();
                         if (now - lastRightClickTime < 300 && this.player && this.gameRunning && !this.gamePaused) {
-                            // On double-click, move by just 1 pixel for ultra-precise alignment
-                            this.player.x = Math.min(this.canvas.width - this.player.width, this.player.x + 1);
+                            // On double-click, attempt column alignment - find nearest column to the right
+                            if (this.alienStartX !== undefined && this.alienSpacing !== undefined) {
+                                const colWidth = this.alienSpacing;
+                                const relativeX = this.player.x - this.alienStartX;
+                                const targetCol = Math.ceil(relativeX / colWidth);
+                                const alignedX = this.alienStartX + (targetCol * colWidth);
+                                this.player.x = Math.min(this.canvas.width - this.player.width, alignedX);
+                            } else {
+                                // If no alien formation, just move 1px
+                                this.player.x = Math.min(this.canvas.width - this.player.width, this.player.x + 1);
+                            }
                         }
                         lastRightClickTime = now;
                     });
@@ -735,10 +753,15 @@
                 // Start the player exactly in the middle for perfect alignment
                 let playerX = Math.floor(this.canvas.width / 2);
                 
-                // If aliens are already created, try to align with an alien column
+                // If aliens are already created, align exactly with a column to ensure perfect alignment
                 if (this.alienStartX !== undefined && this.alienSpacing !== undefined) {
-                    const middleCol = Math.floor(this.isMobile ? 2.5 : 5); // Middle column index
+                    // Find the middle column - use exact center column for better alignment
+                    const cols = this.isMobile ? 5 : 10;
+                    const middleCol = Math.floor(cols / 2) - 0.5; // This ensures we're centered on a column
                     playerX = Math.floor(this.alienStartX + (middleCol * this.alienSpacing));
+                    
+                    // Ensure the position is an integer to avoid rendering artifacts
+                    playerX = Math.round(playerX);
                 }
                 
                 const playerWidth = this.isMobile ? 20 : 40;
@@ -1090,8 +1113,8 @@
                 // Even smaller player on mobile
                 this.width = isMobile ? 20 : 40;
                 this.height = isMobile ? 15 : 30;
-                // Faster but still precise movement speed on mobile
-                this.speed = isMobile ? 3 : 5; // Increased from 1 to 3 for better responsiveness
+                // Balanced movement speed for mobile - not too fast, not too slow
+                this.speed = isMobile ? 2 : 5; // Reduced from 3 to 2 for better alignment
                 this.canvas = canvas;
                 this.isMobile = isMobile;
             }
