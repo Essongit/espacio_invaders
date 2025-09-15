@@ -82,6 +82,16 @@
             max-width: 500px;
             margin-left: auto;
             margin-right: auto;
+            transition: opacity 0.5s, height 0.5s, margin 0.5s;
+        }
+
+        .instructions.hidden {
+            opacity: 0;
+            height: 0;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            border: none;
         }
 
         .instructions p {
@@ -95,6 +105,13 @@
             gap: 20px;
             margin: 20px 0;
             flex-wrap: wrap;
+            transition: all 0.5s ease;
+        }
+        
+        .mobile-controls.game-active {
+            position: relative;
+            top: -10px;
+            margin: 0;
         }
 
         .control-btn {
@@ -184,35 +201,36 @@
         }
 
         /* Mobile optimizations */
-        @media (max-width: 768px) {
-            .game-header {
-                margin-bottom: 5px;
-            }
-            
-            .game-header h1 {
-                font-size: 1.8em;
-                margin-bottom: 5px;
-            }
-            
-            .score-board {
-                flex-direction: row;
-                gap: 8px;
-                max-width: 100%;
-                padding: 5px;
-                font-size: 0.8em;
-            }
-            
-            .score-board span {
-                font-size: 0.9em;
-            }
-            
-            .instructions {
-                font-size: 0.7em;
-                padding: 5px;
-                margin-bottom: 5px;
-            }
-            
-            .mobile-controls {
+            @media (max-width: 768px) {
+                .game-header {
+                    margin-bottom: 5px;
+                }
+                
+                .game-header h1 {
+                    font-size: 1.8em;
+                    margin-bottom: 5px;
+                }
+                
+                .score-board {
+                    flex-direction: row;
+                    gap: 8px;
+                    max-width: 100%;
+                    padding: 5px;
+                    font-size: 0.8em;
+                }
+                
+                .score-board span {
+                    font-size: 0.9em;
+                }
+                
+                .instructions {
+                    font-size: 0.8em;
+                    padding: 8px;
+                    margin-bottom: 8px;
+                    background: rgba(0, 255, 0, 0.2);
+                    border: 2px solid #00ff00;
+                }
+                            .mobile-controls {
                 display: flex !important;
                 margin: 5px 0;
             }
@@ -385,7 +403,7 @@
         <canvas id="gameCanvas" width="800" height="600"></canvas>
         
         <div class="game-controls">
-            <div class="instructions">
+            <div id="instructions" class="instructions">
                 <p><strong>Desktop:</strong> Use arrow keys to move, spacebar to shoot</p>
                 <p><strong>Mobile:</strong> Touch left/right side to move, tap center to shoot</p>
             </div>
@@ -632,12 +650,12 @@
                         if (this.player && this.gameRunning && !this.gamePaused) {
                             // Calculate column width based on alien spacing
                             const columnWidth = this.isMobile ? 32 : 50; // Should match alien spacing
-                            // Move left by 1/4 of a column
-                            const movement = columnWidth / 4;
+                            // Move left by 1/2 of a column for faster movement
+                            const movement = columnWidth / 2;
                             this.player.x = Math.max(0, this.player.x - movement);
                         }
-                        // Disable continuous movement for more precise control
-                        // this.keys['ArrowLeft'] = true;
+                        // Enable continuous movement for faster response
+                        this.keys['ArrowLeft'] = true;
                     });
                     
                     document.getElementById('leftBtn').addEventListener('touchend', (e) => {
@@ -651,12 +669,12 @@
                         if (this.player && this.gameRunning && !this.gamePaused) {
                             // Calculate column width based on alien spacing
                             const columnWidth = this.isMobile ? 32 : 50; // Should match alien spacing
-                            // Move right by 1/4 of a column
-                            const movement = columnWidth / 4;
+                            // Move right by 1/2 of a column for faster movement
+                            const movement = columnWidth / 2;
                             this.player.x = Math.min(this.canvas.width - this.player.width, this.player.x + movement);
                         }
-                        // Disable continuous movement for more precise control
-                        // this.keys['ArrowRight'] = true;
+                        // Enable continuous movement for faster response
+                        this.keys['ArrowRight'] = true;
                     });
                     
                     document.getElementById('rightBtn').addEventListener('touchend', (e) => {
@@ -767,6 +785,15 @@
                 document.getElementById('startBtn').style.display = 'none';
                 document.getElementById('pauseBtn').style.display = 'inline-block';
                 document.getElementById('gameOver').classList.add('hidden');
+                
+                // Hide instructions when game starts
+                document.getElementById('instructions').classList.add('hidden');
+                
+                // Move mobile controls up
+                if (this.isMobile) {
+                    document.getElementById('mobileControls').classList.add('game-active');
+                }
+                
                 this.gameLoop();
             }
             
@@ -1036,6 +1063,15 @@
                 document.getElementById('pauseBtn').style.display = 'none';
                 document.getElementById('finalScore').textContent = this.score;
                 document.getElementById('gameOver').classList.remove('hidden');
+                
+                // Show instructions again
+                document.getElementById('instructions').classList.remove('hidden');
+                
+                // Reset mobile controls position
+                if (this.isMobile) {
+                    document.getElementById('mobileControls').classList.remove('game-active');
+                }
+                
                 this.soundManager.play('gameOver');
             }
             
@@ -1054,8 +1090,8 @@
                 // Even smaller player on mobile
                 this.width = isMobile ? 20 : 40;
                 this.height = isMobile ? 15 : 30;
-                // Extremely slow movement speed on mobile for very precise control
-                this.speed = isMobile ? 1 : 5; // Further reduced from 2 to 1 on mobile
+                // Faster but still precise movement speed on mobile
+                this.speed = isMobile ? 3 : 5; // Increased from 1 to 3 for better responsiveness
                 this.canvas = canvas;
                 this.isMobile = isMobile;
             }
