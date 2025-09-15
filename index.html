@@ -625,8 +625,14 @@
                 
                 // Mobile touch controls
                 if (this.isMobile) {
+                    // Implement more precise single-tap movement for mobile
                     document.getElementById('leftBtn').addEventListener('touchstart', (e) => {
                         e.preventDefault();
+                        // Move left immediately by a small amount
+                        if (this.player && this.gameRunning && !this.gamePaused) {
+                            this.player.x = Math.max(0, this.player.x - 10);
+                        }
+                        // Also set key for continuous movement if held
                         this.keys['ArrowLeft'] = true;
                     });
                     
@@ -637,6 +643,11 @@
                     
                     document.getElementById('rightBtn').addEventListener('touchstart', (e) => {
                         e.preventDefault();
+                        // Move right immediately by a small amount
+                        if (this.player && this.gameRunning && !this.gamePaused) {
+                            this.player.x = Math.min(this.canvas.width - this.player.width, this.player.x + 10);
+                        }
+                        // Also set key for continuous movement if held
                         this.keys['ArrowRight'] = true;
                     });
                     
@@ -990,8 +1001,8 @@
                 // Even smaller player on mobile
                 this.width = isMobile ? 20 : 40;
                 this.height = isMobile ? 15 : 30;
-                // Slightly faster on mobile for better responsiveness
-                this.speed = isMobile ? 5 : 5;
+                // Much slower movement speed on mobile for more precise control
+                this.speed = isMobile ? 2 : 5; // Reduced from 5 to 2 on mobile
                 this.canvas = canvas;
                 this.isMobile = isMobile;
             }
