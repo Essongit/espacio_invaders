@@ -84,7 +84,7 @@
             margin-right: auto;
             transition: opacity 0.5s, height 0.5s, margin 0.5s;
         }
-
+        
         .instructions.hidden {
             opacity: 0;
             height: 0;
@@ -201,36 +201,37 @@
         }
 
         /* Mobile optimizations */
-            @media (max-width: 768px) {
-                .game-header {
-                    margin-bottom: 5px;
-                }
-                
-                .game-header h1 {
-                    font-size: 1.8em;
-                    margin-bottom: 5px;
-                }
-                
-                .score-board {
-                    flex-direction: row;
-                    gap: 8px;
-                    max-width: 100%;
-                    padding: 5px;
-                    font-size: 0.8em;
-                }
-                
-                .score-board span {
-                    font-size: 0.9em;
-                }
-                
-                .instructions {
-                    font-size: 0.8em;
-                    padding: 8px;
-                    margin-bottom: 8px;
-                    background: rgba(0, 255, 0, 0.2);
-                    border: 2px solid #00ff00;
-                }
-                            .mobile-controls {
+        @media (max-width: 768px) {
+            .game-header {
+                margin-bottom: 5px;
+            }
+            
+            .game-header h1 {
+                font-size: 1.8em;
+                margin-bottom: 5px;
+            }
+            
+            .score-board {
+                flex-direction: row;
+                gap: 8px;
+                max-width: 100%;
+                padding: 5px;
+                font-size: 0.8em;
+            }
+            
+            .score-board span {
+                font-size: 0.9em;
+            }
+            
+            .instructions {
+                font-size: 0.8em;
+                padding: 8px;
+                margin-bottom: 8px;
+                background: rgba(0, 255, 0, 0.2);
+                border: 2px solid #00ff00;
+            }
+            
+            .mobile-controls {
                 display: flex !important;
                 margin: 5px 0;
             }
@@ -650,12 +651,12 @@
                         if (this.player && this.gameRunning && !this.gamePaused) {
                             // Calculate column width based on alien spacing
                             const columnWidth = this.isMobile ? 32 : 50; // Should match alien spacing
-                            // Move left by 1/4 of a column for better alignment precision
+                            // Move left by 1/4 of a column
                             const movement = columnWidth / 4;
                             this.player.x = Math.max(0, this.player.x - movement);
                         }
-                        // Enable continuous movement for response
-                        this.keys['ArrowLeft'] = true;
+                        // Disable continuous movement for more precise control
+                        // this.keys['ArrowLeft'] = true;
                     });
                     
                     document.getElementById('leftBtn').addEventListener('touchend', (e) => {
@@ -669,12 +670,12 @@
                         if (this.player && this.gameRunning && !this.gamePaused) {
                             // Calculate column width based on alien spacing
                             const columnWidth = this.isMobile ? 32 : 50; // Should match alien spacing
-                            // Move right by 1/4 of a column for better alignment precision
+                            // Move right by 1/4 of a column
                             const movement = columnWidth / 4;
                             this.player.x = Math.min(this.canvas.width - this.player.width, this.player.x + movement);
                         }
-                        // Enable continuous movement for response
-                        this.keys['ArrowRight'] = true;
+                        // Disable continuous movement for more precise control
+                        // this.keys['ArrowRight'] = true;
                     });
                     
                     document.getElementById('rightBtn').addEventListener('touchend', (e) => {
@@ -689,17 +690,8 @@
                     document.getElementById('leftBtn').addEventListener('click', (e) => {
                         const now = Date.now();
                         if (now - lastLeftClickTime < 300 && this.player && this.gameRunning && !this.gamePaused) {
-                            // On double-click, attempt column alignment - find nearest column to the left
-                            if (this.alienStartX !== undefined && this.alienSpacing !== undefined) {
-                                const colWidth = this.alienSpacing;
-                                const relativeX = this.player.x - this.alienStartX;
-                                const targetCol = Math.floor(relativeX / colWidth);
-                                const alignedX = this.alienStartX + (targetCol * colWidth);
-                                this.player.x = Math.max(0, alignedX);
-                            } else {
-                                // If no alien formation, just move 1px
-                                this.player.x = Math.max(0, this.player.x - 1);
-                            }
+                            // On double-click, move by just 1 pixel for ultra-precise alignment
+                            this.player.x = Math.max(0, this.player.x - 1);
                         }
                         lastLeftClickTime = now;
                     });
@@ -707,17 +699,8 @@
                     document.getElementById('rightBtn').addEventListener('click', (e) => {
                         const now = Date.now();
                         if (now - lastRightClickTime < 300 && this.player && this.gameRunning && !this.gamePaused) {
-                            // On double-click, attempt column alignment - find nearest column to the right
-                            if (this.alienStartX !== undefined && this.alienSpacing !== undefined) {
-                                const colWidth = this.alienSpacing;
-                                const relativeX = this.player.x - this.alienStartX;
-                                const targetCol = Math.ceil(relativeX / colWidth);
-                                const alignedX = this.alienStartX + (targetCol * colWidth);
-                                this.player.x = Math.min(this.canvas.width - this.player.width, alignedX);
-                            } else {
-                                // If no alien formation, just move 1px
-                                this.player.x = Math.min(this.canvas.width - this.player.width, this.player.x + 1);
-                            }
+                            // On double-click, move by just 1 pixel for ultra-precise alignment
+                            this.player.x = Math.min(this.canvas.width - this.player.width, this.player.x + 1);
                         }
                         lastRightClickTime = now;
                     });
@@ -753,15 +736,10 @@
                 // Start the player exactly in the middle for perfect alignment
                 let playerX = Math.floor(this.canvas.width / 2);
                 
-                // If aliens are already created, align exactly with a column to ensure perfect alignment
+                // If aliens are already created, try to align with an alien column
                 if (this.alienStartX !== undefined && this.alienSpacing !== undefined) {
-                    // Find the middle column - use exact center column for better alignment
-                    const cols = this.isMobile ? 5 : 10;
-                    const middleCol = Math.floor(cols / 2) - 0.5; // This ensures we're centered on a column
+                    const middleCol = Math.floor(this.isMobile ? 2.5 : 5); // Middle column index
                     playerX = Math.floor(this.alienStartX + (middleCol * this.alienSpacing));
-                    
-                    // Ensure the position is an integer to avoid rendering artifacts
-                    playerX = Math.round(playerX);
                 }
                 
                 const playerWidth = this.isMobile ? 20 : 40;
@@ -1113,8 +1091,8 @@
                 // Even smaller player on mobile
                 this.width = isMobile ? 20 : 40;
                 this.height = isMobile ? 15 : 30;
-                // Balanced movement speed for mobile - not too fast, not too slow
-                this.speed = isMobile ? 2 : 5; // Reduced from 3 to 2 for better alignment
+                // Extremely slow movement speed on mobile for very precise control
+                this.speed = isMobile ? 1 : 5; // Further reduced from 2 to 1 on mobile
                 this.canvas = canvas;
                 this.isMobile = isMobile;
             }
