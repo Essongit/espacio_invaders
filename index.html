@@ -186,64 +186,76 @@
         /* Mobile optimizations */
         @media (max-width: 768px) {
             .game-header {
-                margin-bottom: 10px;
+                margin-bottom: 5px;
             }
             
             .game-header h1 {
-                font-size: 2em;
-                margin-bottom: 10px;
+                font-size: 1.8em;
+                margin-bottom: 5px;
             }
             
             .score-board {
-                flex-direction: column;
-                gap: 5px;
-                max-width: 250px;
-                padding: 8px;
+                flex-direction: row;
+                gap: 8px;
+                max-width: 100%;
+                padding: 5px;
+                font-size: 0.8em;
+            }
+            
+            .score-board span {
+                font-size: 0.9em;
             }
             
             .instructions {
-                font-size: 0.8em;
-                padding: 8px;
-                margin-bottom: 10px;
+                font-size: 0.7em;
+                padding: 5px;
+                margin-bottom: 5px;
             }
             
             .mobile-controls {
                 display: flex !important;
-                margin: 10px 0;
+                margin: 5px 0;
             }
             
             .control-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2em;
+                box-shadow: 0 2px 8px rgba(0, 255, 0, 0.3);
+            }
+            
+            .shoot-btn {
                 width: 60px;
                 height: 60px;
                 font-size: 1.5em;
             }
             
-            .shoot-btn {
-                width: 80px;
-                height: 80px;
-                font-size: 2em;
-            }
-            
             .game-over {
                 width: 90%;
-                max-width: 400px;
-                padding: 20px;
+                max-width: 300px;
+                padding: 15px;
             }
             
             .game-over h2 {
-                font-size: 2em;
+                font-size: 1.8em;
             }
             
             .game-over p {
-                font-size: 1.2em;
+                font-size: 1em;
             }
             
             .game-controls {
-                margin-top: 10px;
+                margin-top: 5px;
             }
             
             #gameCanvas {
-                margin: 10px auto;
+                margin: 5px auto;
+            }
+            
+            .start-btn, .pause-btn {
+                font-size: 0.9em;
+                padding: 8px 15px;
+                margin: 5px;
             }
         }
 
@@ -253,24 +265,28 @@
             }
             
             .score-board span {
-                font-size: 0.9em;
+                font-size: 0.8em;
             }
             
             .control-btn {
-                width: 50px;
-                height: 50px;
-                font-size: 1.2em;
+                width: 45px;
+                height: 45px;
+                font-size: 1em;
             }
             
             .shoot-btn {
-                width: 70px;
-                height: 70px;
-                font-size: 1.8em;
+                width: 55px;
+                height: 55px;
+                font-size: 1.3em;
             }
             
             .start-btn, .pause-btn {
-                font-size: 1em;
-                padding: 12px 24px;
+                font-size: 0.8em;
+                padding: 8px 12px;
+            }
+            
+            .instructions {
+                font-size: 0.65em;
             }
         }
 
@@ -579,9 +595,9 @@
                 
                 if (this.isMobile) {
                     this.canvas.width = Math.min(400, window.innerWidth - 20);
-                    // Increase mobile height and use more available screen space
-                    const availableHeight = window.innerHeight - 180; // Leave space for UI
-                    this.canvas.height = Math.max(500, Math.min(700, availableHeight));
+                    // Use even more screen space on mobile with smaller elements
+                    const availableHeight = window.innerHeight - 160; // Less space for UI
+                    this.canvas.height = Math.max(550, Math.min(750, availableHeight));
                 } else {
                     this.canvas.width = 800;
                     this.canvas.height = 600;
@@ -654,26 +670,32 @@
             
             createPlayer() {
                 // Position player relative to canvas height for better mobile experience
-                const playerY = this.canvas.height - 60; // Give more space from bottom
-                this.player = new Player(this.canvas.width / 2, playerY, this.canvas);
+                const playerY = this.canvas.height - (this.isMobile ? 40 : 60); // Closer to bottom on mobile
+                this.player = new Player(this.canvas.width / 2, playerY, this.canvas, this.isMobile);
             }
             
             createAliens() {
                 this.aliens = [];
                 const rows = 5;
-                const cols = 10;
-                const alienWidth = 40;
-                const alienHeight = 30;
-                const spacing = this.isMobile ? 40 : 50; // Tighter spacing on mobile
-                const startX = (this.canvas.width - (cols * spacing)) / 2;
-                // Give more space at top for mobile
-                const startY = this.isMobile ? 30 : 50;
+                // Fewer columns for mobile to prevent wall collision issues
+                const cols = this.isMobile ? 8 : 10;
+                // Even smaller aliens on mobile
+                const alienWidth = this.isMobile ? 15 : 40;
+                const alienHeight = this.isMobile ? 12 : 30;
+                const spacing = this.isMobile ? 22 : 50; // Even tighter spacing on mobile
+                
+                // Calculate width of alien formation
+                const formationWidth = cols * spacing;
+                // Ensure aliens start with enough margin from edges to prevent immediate collisions
+                const startX = (this.canvas.width - formationWidth) / 2;
+                // Give even more space at top for mobile
+                const startY = this.isMobile ? 15 : 50;
                 
                 for (let row = 0; row < rows; row++) {
                     for (let col = 0; col < cols; col++) {
                         const x = startX + col * spacing;
                         const y = startY + row * spacing;
-                        this.aliens.push(new Alien(x, y, row));
+                        this.aliens.push(new Alien(x, y, row, this.isMobile));
                     }
                 }
             }
@@ -743,14 +765,19 @@
                 
                 // Update aliens
                 this.alienMoveTimer += deltaTime;
-                if (this.alienMoveTimer > 1000) { // Move aliens every second
+                // Slower alien movement on mobile
+                const alienMoveInterval = this.isMobile ? 1200 : 1000;
+                if (this.alienMoveTimer > alienMoveInterval) {
                     this.moveAliens();
                     this.alienMoveTimer = 0;
                 }
                 
                 // Alien shooting
                 this.alienShootTimer += deltaTime;
-                if (this.alienShootTimer > 2000 + Math.random() * 3000) { // Random alien shooting
+                // Less frequent shooting on mobile
+                const minShootInterval = this.isMobile ? 2500 : 2000;
+                const maxAdditionalDelay = this.isMobile ? 3500 : 3000;
+                if (this.alienShootTimer > minShootInterval + Math.random() * maxAdditionalDelay) {
                     this.alienShoot();
                     this.alienShootTimer = 0;
                 }
@@ -791,7 +818,17 @@
             
             shootBullet() {
                 if (this.gameRunning && !this.gamePaused) {
-                    this.bullets.push(new Bullet(this.player.x + this.player.width / 2, this.player.y, -5));
+                    // Even smaller bullets on mobile
+                    const bulletWidth = this.isMobile ? 2 : 4;
+                    const bulletHeight = this.isMobile ? 5 : 10;
+                    const bulletSpeed = this.isMobile ? -6 : -5; // Faster bullets on mobile
+                    this.bullets.push(new Bullet(
+                        this.player.x + this.player.width / 2, 
+                        this.player.y, 
+                        bulletSpeed, 
+                        bulletWidth, 
+                        bulletHeight
+                    ));
                     this.soundManager.play('shoot');
                 }
             }
@@ -799,7 +836,17 @@
             alienShoot() {
                 if (this.aliens.length > 0) {
                     const randomAlien = this.aliens[Math.floor(Math.random() * this.aliens.length)];
-                    this.alienBullets.push(new Bullet(randomAlien.x + randomAlien.width / 2, randomAlien.y + randomAlien.height, 3));
+                    // Even smaller bullets on mobile
+                    const bulletWidth = this.isMobile ? 2 : 4;
+                    const bulletHeight = this.isMobile ? 5 : 10;
+                    const bulletSpeed = this.isMobile ? 3.5 : 3; // Slightly faster on mobile for consistent difficulty
+                    this.alienBullets.push(new Bullet(
+                        randomAlien.x + randomAlien.width / 2, 
+                        randomAlien.y + randomAlien.height, 
+                        bulletSpeed, 
+                        bulletWidth, 
+                        bulletHeight
+                    ));
                 }
             }
             
@@ -808,22 +855,26 @@
                 
                 // Check if aliens hit the edge
                 for (let alien of this.aliens) {
-                    if (alien.x <= 0 || alien.x + alien.width >= this.canvas.width) {
+                    // Add extra margin buffer for mobile to prevent frequent wall collisions
+                    const edgeBuffer = this.isMobile ? 8 : 0;
+                    if (alien.x <= edgeBuffer || alien.x + alien.width >= this.canvas.width - edgeBuffer) {
                         moveDown = true;
                         break;
                     }
                 }
                 
                 if (moveDown) {
-                    // Change direction and move down
+                    // Change direction and move down (smaller steps on mobile)
+                    const downMovement = this.isMobile ? 8 : 20;
                     this.aliens.forEach(alien => {
                         alien.direction *= -1;
-                        alien.y += 20;
+                        alien.y += downMovement;
                     });
                 } else {
-                    // Move horizontally
+                    // Move horizontally (smaller steps on mobile)
+                    const horizontalMovement = this.isMobile ? 4 : 10;
                     this.aliens.forEach(alien => {
-                        alien.x += alien.direction * 10;
+                        alien.x += alien.direction * horizontalMovement;
                     });
                 }
             }
@@ -885,7 +936,7 @@
             
             createExplosion(x, y) {
                 for (let i = 0; i < 10; i++) {
-                    this.particles.push(new Particle(x, y));
+                    this.particles.push(new Particle(x, y, this.isMobile));
                 }
                 this.soundManager.play('explosion');
             }
@@ -932,13 +983,16 @@
 
         // Player class
         class Player {
-            constructor(x, y, canvas) {
+            constructor(x, y, canvas, isMobile = false) {
                 this.x = x;
                 this.y = y;
-                this.width = 40;
-                this.height = 30;
-                this.speed = 5;
+                // Even smaller player on mobile
+                this.width = isMobile ? 20 : 40;
+                this.height = isMobile ? 15 : 30;
+                // Slightly faster on mobile for better responsiveness
+                this.speed = isMobile ? 5 : 5;
                 this.canvas = canvas;
+                this.isMobile = isMobile;
             }
             
             update(keys) {
@@ -954,23 +1008,33 @@
                 ctx.fillStyle = '#00ff00';
                 ctx.fillRect(this.x, this.y, this.width, this.height);
                 
-                // Draw ship details
+                // Draw ship details (scaled for mobile)
                 ctx.fillStyle = '#fff';
-                ctx.fillRect(this.x + 15, this.y - 5, 10, 5);
-                ctx.fillRect(this.x + 5, this.y + 25, 10, 8);
-                ctx.fillRect(this.x + 25, this.y + 25, 10, 8);
+                if (this.isMobile) {
+                    // Even smaller details for mobile
+                    ctx.fillRect(this.x + 8, this.y - 2, 4, 2);
+                    ctx.fillRect(this.x + 3, this.y + 12, 4, 3);
+                    ctx.fillRect(this.x + 13, this.y + 12, 4, 3);
+                } else {
+                    // Original size for desktop
+                    ctx.fillRect(this.x + 15, this.y - 5, 10, 5);
+                    ctx.fillRect(this.x + 5, this.y + 25, 10, 8);
+                    ctx.fillRect(this.x + 25, this.y + 25, 10, 8);
+                }
             }
         }
 
         // Alien class
         class Alien {
-            constructor(x, y, type) {
+            constructor(x, y, type, isMobile = false) {
                 this.x = x;
                 this.y = y;
-                this.width = 30;
-                this.height = 20;
+                // Even smaller aliens on mobile
+                this.width = isMobile ? 15 : 30;
+                this.height = isMobile ? 12 : 20;
                 this.type = type; // Different types for different rows
                 this.direction = 1;
+                this.isMobile = isMobile;
             }
             
             draw(ctx) {
@@ -978,21 +1042,29 @@
                 ctx.fillStyle = colors[this.type] || '#ff0000';
                 ctx.fillRect(this.x, this.y, this.width, this.height);
                 
-                // Draw alien details
+                // Draw alien details (scaled for mobile)
                 ctx.fillStyle = '#fff';
-                ctx.fillRect(this.x + 5, this.y + 5, 5, 5);
-                ctx.fillRect(this.x + 20, this.y + 5, 5, 5);
-                ctx.fillRect(this.x + 10, this.y + 12, 10, 3);
+                if (this.isMobile) {
+                    // Even smaller details for mobile
+                    ctx.fillRect(this.x + 2, this.y + 2, 2, 2);
+                    ctx.fillRect(this.x + 11, this.y + 2, 2, 2);
+                    ctx.fillRect(this.x + 5, this.y + 7, 5, 2);
+                } else {
+                    // Original size for desktop
+                    ctx.fillRect(this.x + 5, this.y + 5, 5, 5);
+                    ctx.fillRect(this.x + 20, this.y + 5, 5, 5);
+                    ctx.fillRect(this.x + 10, this.y + 12, 10, 3);
+                }
             }
         }
 
         // Bullet class
         class Bullet {
-            constructor(x, y, speed) {
+            constructor(x, y, speed, width = 4, height = 10) {
                 this.x = x;
                 this.y = y;
-                this.width = 4;
-                this.height = 10;
+                this.width = width;
+                this.height = height;
                 this.speed = speed;
             }
             
@@ -1008,13 +1080,14 @@
 
         // Particle class for explosions
         class Particle {
-            constructor(x, y) {
+            constructor(x, y, isMobile = false) {
                 this.x = x;
                 this.y = y;
-                this.vx = (Math.random() - 0.5) * 10;
-                this.vy = (Math.random() - 0.5) * 10;
+                this.vx = (Math.random() - 0.5) * (isMobile ? 6 : 10);
+                this.vy = (Math.random() - 0.5) * (isMobile ? 6 : 10);
                 this.life = 30;
                 this.maxLife = 30;
+                this.size = isMobile ? 2 : 3;
             }
             
             update() {
@@ -1026,7 +1099,7 @@
             draw(ctx) {
                 const alpha = this.life / this.maxLife;
                 ctx.fillStyle = `rgba(255, 255, 0, ${alpha})`;
-                ctx.fillRect(this.x, this.y, 3, 3);
+                ctx.fillRect(this.x, this.y, this.size, this.size);
             }
         }
 
