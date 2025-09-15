@@ -625,15 +625,19 @@
                 
                 // Mobile touch controls
                 if (this.isMobile) {
-                    // Implement extremely precise single-tap movement for mobile
+                    // Implement grid-aligned precise movement for mobile
                     document.getElementById('leftBtn').addEventListener('touchstart', (e) => {
                         e.preventDefault();
-                        // Move left immediately by a tiny amount
+                        // Instead of fixed pixels, align to columns based on alien spacing
                         if (this.player && this.gameRunning && !this.gamePaused) {
-                            this.player.x = Math.max(0, this.player.x - 5); // Reduced from 10px to 5px
+                            // Calculate column width based on alien spacing
+                            const columnWidth = this.isMobile ? 32 : 50; // Should match alien spacing
+                            // Move left by 1/4 of a column
+                            const movement = columnWidth / 4;
+                            this.player.x = Math.max(0, this.player.x - movement);
                         }
-                        // Also set key for continuous movement if held
-                        this.keys['ArrowLeft'] = true;
+                        // Disable continuous movement for more precise control
+                        // this.keys['ArrowLeft'] = true;
                     });
                     
                     document.getElementById('leftBtn').addEventListener('touchend', (e) => {
@@ -643,17 +647,43 @@
                     
                     document.getElementById('rightBtn').addEventListener('touchstart', (e) => {
                         e.preventDefault();
-                        // Move right immediately by a tiny amount
+                        // Instead of fixed pixels, align to columns based on alien spacing
                         if (this.player && this.gameRunning && !this.gamePaused) {
-                            this.player.x = Math.min(this.canvas.width - this.player.width, this.player.x + 5); // Reduced from 10px to 5px
+                            // Calculate column width based on alien spacing
+                            const columnWidth = this.isMobile ? 32 : 50; // Should match alien spacing
+                            // Move right by 1/4 of a column
+                            const movement = columnWidth / 4;
+                            this.player.x = Math.min(this.canvas.width - this.player.width, this.player.x + movement);
                         }
-                        // Also set key for continuous movement if held
-                        this.keys['ArrowRight'] = true;
+                        // Disable continuous movement for more precise control
+                        // this.keys['ArrowRight'] = true;
                     });
                     
                     document.getElementById('rightBtn').addEventListener('touchend', (e) => {
                         e.preventDefault();
                         this.keys['ArrowRight'] = false;
+                    });
+                    
+                    // Add double-click functionality for finer movements
+                    let lastLeftClickTime = 0;
+                    let lastRightClickTime = 0;
+                    
+                    document.getElementById('leftBtn').addEventListener('click', (e) => {
+                        const now = Date.now();
+                        if (now - lastLeftClickTime < 300 && this.player && this.gameRunning && !this.gamePaused) {
+                            // On double-click, move by just 1 pixel for ultra-precise alignment
+                            this.player.x = Math.max(0, this.player.x - 1);
+                        }
+                        lastLeftClickTime = now;
+                    });
+                    
+                    document.getElementById('rightBtn').addEventListener('click', (e) => {
+                        const now = Date.now();
+                        if (now - lastRightClickTime < 300 && this.player && this.gameRunning && !this.gamePaused) {
+                            // On double-click, move by just 1 pixel for ultra-precise alignment
+                            this.player.x = Math.min(this.canvas.width - this.player.width, this.player.x + 1);
+                        }
+                        lastRightClickTime = now;
                     });
                     
                     document.getElementById('shootBtn').addEventListener('touchstart', (e) => {
@@ -683,7 +713,21 @@
             createPlayer() {
                 // Position player relative to canvas height for better mobile experience
                 const playerY = this.canvas.height - (this.isMobile ? 40 : 60); // Closer to bottom on mobile
-                this.player = new Player(this.canvas.width / 2, playerY, this.canvas, this.isMobile);
+                
+                // Start the player exactly in the middle for perfect alignment
+                let playerX = Math.floor(this.canvas.width / 2);
+                
+                // If aliens are already created, try to align with an alien column
+                if (this.alienStartX !== undefined && this.alienSpacing !== undefined) {
+                    const middleCol = Math.floor(this.isMobile ? 2.5 : 5); // Middle column index
+                    playerX = Math.floor(this.alienStartX + (middleCol * this.alienSpacing));
+                }
+                
+                const playerWidth = this.isMobile ? 20 : 40;
+                // Center the player on the chosen position
+                playerX -= Math.floor(playerWidth / 2);
+                
+                this.player = new Player(playerX, playerY, this.canvas, this.isMobile);
             }
             
             createAliens() {
@@ -696,10 +740,15 @@
                 const alienHeight = this.isMobile ? 8 : 30; // Significantly reduced height for mobile
                 const spacing = this.isMobile ? 32 : 50; // Increased spacing for mobile to prevent cutoff
                 
+                // Store spacing as a property so it can be accessed for player alignment
+                this.alienSpacing = spacing;
+                
                 // Calculate width of alien formation
                 const formationWidth = cols * spacing;
                 // Ensure aliens start with much more margin from edges to prevent collisions
-                const startX = (this.canvas.width - formationWidth) / 2 + (this.isMobile ? 10 : 0);
+                const startX = Math.floor((this.canvas.width - formationWidth) / 2) + (this.isMobile ? 10 : 0);
+                // Make sure startX is a whole number for precise alignment
+                this.alienStartX = startX;
                 // Give even more space at top for mobile
                 const startY = this.isMobile ? 20 : 50;
                 
@@ -834,8 +883,12 @@
                     const bulletWidth = this.isMobile ? 2 : 4;
                     const bulletHeight = this.isMobile ? 5 : 10;
                     const bulletSpeed = this.isMobile ? -6 : -5; // Faster bullets on mobile
+                    
+                    // Calculate bullet position precisely in the center of the player
+                    const bulletX = this.player.x + (this.player.width / 2) - (bulletWidth / 2);
+                    
                     this.bullets.push(new Bullet(
-                        this.player.x + this.player.width / 2, 
+                        bulletX, 
                         this.player.y, 
                         bulletSpeed, 
                         bulletWidth, 
